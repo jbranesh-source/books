@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Books">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>My Books</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--text:#1c1c1e;--mute:#6e6e73;--line:#e3e1da;--acc:#2f6fed;--accText:#fff;--bar:#e3e1da;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111113;--card:#1c1c1f;--text:#f2f2f4;--mute:#9a9aa0;--line:#2c2c30;--acc:#5b93ff;--accText:#fff;--bar:#333338;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111113;--card:#1c1c1f;--text:#f2f2f4;--mute:#9a9aa0;--line:#2c2c30;--acc:#5b93ff;--accText:#fff;--bar:#333338;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+.screen{display:none;flex-direction:column;height:100%}
+.screen.on{display:flex}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+header h1{font-size:20px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button{font:inherit;color:var(--text);background:none;border:0;padding:8px 10px;border-radius:10px}
+.pri{background:var(--acc);color:var(--accText);font-weight:600;padding:9px 14px}
+.list{flex:1;overflow:auto;padding:14px 16px 90px}
+.row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.row .main{flex:1;min-width:0}
+.row .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s{font-size:13px;color:var(--mute);margin-top:3px}
+.ico{font-size:26px}
+.x{color:var(--mute);font-size:18px}
+.bar{height:4px;border-radius:2px;background:var(--bar);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc)}
+.cont{background:var(--acc);color:var(--accText);border-radius:16px;padding:16px;margin-bottom:16px}
+.cont small{opacity:.85}
+.cont b{display:block;font-size:18px;margin:4px 0}
+.empty{text-align:center;color:var(--mute);margin-top:60px;line-height:1.6}
+#stage{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;background:var(--bar);text-align:center}
+#cv{display:block;margin:0 auto;background:#fff}
+.tools{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 12px;background:var(--card);border-top:1px solid var(--line)}
+.tools button{font-size:20px;padding:8px 14px}
+.tools input{width:56px;text-align:center;font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+#msg{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#000c;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;display:none}
+html,body{touch-action:manipulation}
+#pw{position:relative;display:block;width:fit-content;margin:0 auto}
+#hl{position:absolute;inset:0;pointer-events:none}
+#hl i{position:absolute;background:#ffd400;opacity:.5;mix-blend-mode:multiply;border-radius:2px}
+#tl{position:absolute;inset:0;overflow:hidden;line-height:1;-webkit-user-select:text;user-select:text;text-align:left}
+#tl span,#tl br{color:transparent;position:absolute;white-space:pre;transform-origin:0 0;-webkit-user-select:text;user-select:text}
+#tl ::selection{background:rgba(47,111,237,.35)}
+#sel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(80px + env(safe-area-inset-bottom,0px));display:none;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px;box-shadow:0 4px 18px #0005;z-index:5;-webkit-user-select:none;user-select:none}
+#sheet{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:none;z-index:6;max-height:75%;overflow:auto;box-shadow:0 -6px 24px #0005}
+select{font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+.note{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.note .s{font-size:12px;color:var(--mute);margin-bottom:6px}
+.note .nt{background:#ffd40055;border-radius:6px;padding:4px 6px;line-height:1.45}
+.note .ntr{margin-top:8px;line-height:1.5;color:var(--acc)}
+.note .na{display:flex;gap:6px;margin-top:8px}
+.note .na button{background:var(--bg);font-size:14px}
+</style>
+</head>
+<body>
+
+<div class="screen on" id="home">
+  <header><h1 id="hTitle">📚 My Books</h1><button id="hBack" style="display:none">‹ Back</button><button class="pri" id="hAdd">+ Folder</button></header>
+  <div class="list" id="list"></div>
+</div>
+
+<div class="screen" id="viewer">
+  <header><button id="vBack">‹ Back</button><h1 id="vTitle"></h1><button id="nBtn">📝 0</button><span id="vInfo" style="color:var(--mute);font-size:14px"></span></header>
+  <div id="stage"><div id="pw"><canvas id="cv"></canvas><div id="hl"></div><div id="tl"></div></div></div>
+  <div class="tools">
+    <button id="prev">◀</button>
+    <button id="zo">−</button>
+    <input id="pg" type="number" inputmode="numeric" min="1">
+    <button id="zi">+</button>
+    <button id="next">▶</button>
+  </div>
+</div>
+
+<div id="sel"><button class="pri" id="bHl">🖍 Highlight</button><button class="pri" id="bTr">🌐 Translate</button></div>
+<div id="sheet">
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><select id="lang"></select><span style="flex:1"></span><button id="sClose">✕</button></div>
+  <div id="sOrig" style="color:var(--mute);font-size:14px;line-height:1.4"></div>
+  <div id="sRes" style="font-size:18px;margin:12px 0;line-height:1.5"></div>
+  <button class="pri" id="sSave" style="width:100%">🖍 Highlight + save translation</button>
+</div>
+<div class="screen" id="notes">
+  <header><button id="nBack">‹ Back</button><h1 id="nTitle">Notes</h1><button id="nCopy">Copy</button></header>
+  <div class="list" id="nList"></div>
+</div>
+<input type="file" id="file" accept="application/pdf,.pdf" multiple hidden>
+<div id="msg"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+let db,folders=[],files=[],curFolder=null,cur=null,pdf=null,zoom=1,task=null,seq=0;
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function toast(t){const m=$("msg");m.textContent=t;m.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>m.style.display="none",2200)}
+
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open("books",1);
+r.onupgradeneeded=()=>{["folders","files","blobs"].forEach(n=>r.result.createObjectStore(n,{keyPath:"id"}))};
+r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function tx(store,mode,fn){return new Promise((res,rej)=>{const t=db.transaction(store,mode);const q=fn(t.objectStore(store));
+t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
+const put=(s,o)=>tx(s,"readwrite",st=>st.put(o));
+const del=(s,id)=>tx(s,"readwrite",st=>st.delete(id));
+
+async function load(){folders=await tx("folders","readonly",s=>s.getAll());files=await tx("files","readonly",s=>s.getAll());
+folders.sort((a,b)=>a.t-b.t);}
+
+function renderHome(){
+  const L=$("list");L.innerHTML="";
+  $("hBack").style.display=curFolder?"":"none";
+  $("hTitle").textContent=curFolder?curFolder.name:"📚 My Books";
+  $("hAdd").textContent=curFolder?"+ PDF":"+ Folder";
+  if(!curFolder){
+    const last=files.filter(f=>f.read).sort((a,b)=>b.read-a.read)[0];
+    if(last){const d=document.createElement("div");d.className="cont";
+      d.innerHTML=`<small>Continue reading</small><b></b><small>Page ${last.page}${last.pages?" of "+last.pages:""}</small>`;
+      d.querySelector("b").textContent=last.name;d.onclick=()=>openBook(last.id);L.appendChild(d)}
+    if(!folders.length)L.innerHTML+=`<div class="empty">No folders yet.<br>Tap “+ Folder” to make a category.</div>`;
+    folders.forEach(f=>{
+      const n=files.filter(x=>x.folder===f.id).length;
+      L.appendChild(row("📁",f.name,n+" book"+(n==1?"":"s"),null,()=>{curFolder=f;renderHome()},()=>delFolder(f)));
+    });
+  }else{
+    const fs=files.filter(x=>x.folder===curFolder.id).sort((a,b)=>a.name.localeCompare(b.name));
+    if(!fs.length)L.innerHTML=`<div class="empty">This folder is empty.<br>Tap “+ PDF” to add books.<br>They stay saved on this phone.</div>`;
+    fs.forEach(f=>{
+      const s=(f.pages?`Page ${f.page} of ${f.pages}`:"Not opened yet")+(f.hl&&f.hl.length?" · "+f.hl.length+" highlights":"");
+      L.appendChild(row("📕",f.name,s,f.pages?Math.round(f.page/f.pages*100):0,()=>openBook(f.id),()=>delBook(f)));
+    });
+  }
+}
+function row(ico,t,s,prog,open,rm){
+  const d=document.createElement("div");d.className="row";
+  d.innerHTML=`<div class="ico">${ico}</div><div class="main"><div class="t"></div><div class="s"></div>${prog!=null?`<div class="bar"><i style="width:${prog}%"></i></div>`:""}</div><button class="x">✕</button>`;
+  d.querySelector(".t").textContent=t;d.querySelector(".s").textContent=s;
+  d.querySelector(".main").onclick=open;d.querySelector(".ico").onclick=open;
+  d.querySelector(".x").onclick=e=>{e.stopPropagation();rm()};
+  return d;
+}
+async function delFolder(f){
+  if(!confirm("Delete folder “"+f.name+"” and all its books?"))return;
+  for(const x of files.filter(x=>x.folder===f.id)){await del("files",x.id);await del("blobs",x.id)}
+  await del("folders",f.id);await load();renderHome();
+}
+async function delBook(f){
+  if(!confirm("Delete “"+f.name+"”?"))return;
+  await del("files",f.id);await del("blobs",f.id);await load();renderHome();
+}
+
+$("hBack").onclick=()=>{curFolder=null;renderHome()};
+$("hAdd").onclick=async()=>{
+  if(!curFolder){
+    const n=(prompt("Folder name (example: Science)")||"").trim();if(!n)return;
+    await put("folders",{id:uid(),name:n,t:Date.now()});await load();renderHome();
+  }else $("file").click();
+};
+$("file").onchange=async e=>{
+  const fl=[...e.target.files];e.target.value="";
+  for(const f of fl){
+    try{const id=uid();
+      await put("blobs",{id,blob:f});
+      await put("files",{id,folder:curFolder.id,name:f.name.replace(/\.pdf$/i,""),page:1,pages:0,read:0,t:Date.now()});
+    }catch(err){toast("Could not save "+f.name)}
+  }
+  await load();renderHome();toast("Saved on this phone");
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+};
+
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id))}
+
+async function openBook(id){
+  const f=files.find(x=>x.id===id);if(!f)return;
+  try{
+    toast("Opening…");
+    const rec=await tx("blobs","readonly",s=>s.get(id));
+    const data=await rec.blob.arrayBuffer();
+    if(pdf){try{pdf.destroy()}catch(e){}}
+    pdf=await pdfjsLib.getDocument({data}).promise;
+    cur=f;f.hl=f.hl||[];updCount();f.pages=pdf.numPages;f.page=Math.min(Math.max(1,f.page||1),pdf.numPages);f.read=Date.now();
+    ls.set("openId",id);zoom=1;
+    $("vTitle").textContent=f.name;show("viewer");await save();render();
+  }catch(err){toast("Could not open this PDF");ls.set("openId",null)}
+}
+const save=()=>cur?put("files",cur).catch(()=>{}):0;
+async function render(){
+  if(!pdf)return;
+  const my=++seq;if(task){try{task.cancel()}catch(e){}}
+  $("pg").value=cur.page;$("vInfo").textContent=cur.page+" / "+cur.pages;
+  hideSel();
+  const p=await pdf.getPage(cur.page);if(my!==seq)return;
+  const st=$("stage"),v1=p.getViewport({scale:1}),dpr=Math.min(window.devicePixelRatio||1,2);
+  const sc=st.clientWidth*zoom/v1.width,vp=p.getViewport({scale:sc*dpr}),c=$("cv");
+  const W=vp.width/dpr,H=vp.height/dpr;
+  c.width=vp.width;c.height=vp.height;c.style.width=W+"px";c.style.height=H+"px";
+  const pw=$("pw");pw.style.width=W+"px";pw.style.height=H+"px";
+  $("tl").innerHTML="";drawHL();
+  task=p.render({canvasContext:c.getContext("2d"),viewport:vp});
+  try{await task.promise}catch(e){return}
+  if(my!==seq)return;
+  try{
+    const tc=await p.getTextContent();if(my!==seq)return;
+    const tl=$("tl");tl.style.setProperty("--scale-factor",sc);
+    await pdfjsLib.renderTextLayer({textContentSource:tc,container:tl,viewport:p.getViewport({scale:sc})}).promise;
+  }catch(e){}
+}
+function go(n){
+  if(!pdf)return;n=Math.max(1,Math.min(pdf.numPages,n|0||cur.page));
+  if(n===cur.page){$("pg").value=n;return}
+  cur.page=n;cur.read=Date.now();save();$("stage").scrollTo(0,0);render();
+}
+$("prev").onclick=()=>go(cur.page-1);
+$("next").onclick=()=>go(cur.page+1);
+$("pg").onchange=e=>go(parseInt(e.target.value));
+$("zi").onclick=()=>{zoom=Math.min(3,zoom+.5);render()};
+$("zo").onclick=()=>{zoom=Math.max(1,zoom-.5);render()};
+$("vBack").onclick=async()=>{await save();ls.set("openId",null);try{pdf&&pdf.destroy()}catch(e){}pdf=null;cur=null;await load();show("home");renderHome()};
+let sx=0,sy=0;
+$("stage").addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+$("stage").addEventListener("touchend",e=>{
+  if(zoom>1||e.changedTouches.length!==1||String(getSelection()).length)return;
+  const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5)go(cur.page+(dx<0?1:-1));
+},{passive:true});
+
+/* ---------- highlights, translate, notes ---------- */
+const LANGS={hi:"Hindi",ta:"Tamil",kn:"Kannada",te:"Telugu",ml:"Malayalam",bn:"Bengali",mr:"Marathi",gu:"Gujarati",ur:"Urdu",en:"English",es:"Spanish",fr:"French",de:"German",ar:"Arabic"};
+$("lang").innerHTML=Object.entries(LANGS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+$("lang").value=ls.get("lang")||"hi";
+let sel=null,selT,trText=null;
+const updCount=()=>{$("nBtn").textContent="📝 "+((cur&&cur.hl)?cur.hl.length:0)};
+function hideSel(){$("sel").style.display="none";sel=null}
+function clr(){try{getSelection().removeAllRanges()}catch(e){}hideSel()}
+document.addEventListener("selectionchange",()=>{clearTimeout(selT);selT=setTimeout(readSel,250)});
+function readSel(){
+  const s=getSelection();
+  if(!pdf||!cur||!s||s.isCollapsed||!s.rangeCount||$("sheet").style.display==="block")return;
+  const r=s.getRangeAt(0);
+  if(!$("tl").contains(r.commonAncestorContainer))return;
+  const text=String(s).replace(/\s+/g," ").trim();if(!text)return;
+  const b=$("pw").getBoundingClientRect();
+  const rects=[...r.getClientRects()].filter(q=>q.width>1&&q.height>1).map(q=>[(q.left-b.left)/b.width,(q.top-b.top)/b.height,q.width/b.width,q.height/b.height]);
+  sel={page:cur.page,text,rects};$("sel").style.display="flex";
+}
+$("stage").addEventListener("click",()=>{if(!String(getSelection()).length)hideSel()});
+function drawHL(){
+  const h=$("hl");h.innerHTML="";
+  ((cur&&cur.hl)||[]).filter(x=>x.page===cur.page).forEach(x=>x.rects.forEach(r=>{
+    const i=document.createElement("i");
+    i.style.cssText=`left:${r[0]*100}%;top:${r[1]*100}%;width:${r[2]*100}%;height:${r[3]*100}%`;h.appendChild(i)}));
+}
+function addHL(extra){
+  if(!sel)return null;
+  const h=Object.assign({id:uid(),page:sel.page,rects:sel.rects,text:sel.text,t:Date.now()},extra||{});
+  cur.hl=cur.hl||[];cur.hl.push(h);save();drawHL();updCount();return h;
+}
+$("bHl").onclick=()=>{if(addHL()){toast("Highlight saved");clr()}};
+
+async function tr(text,lang){
+  const parts=text.match(/[\s\S]{1,400}(?:\s|$)/g)||[text];let out=[];
+  for(const p of parts){
+    let t=null;
+    try{const r=await fetch("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl="+lang+"&dt=t&q="+encodeURIComponent(p));const j=await r.json();t=j[0].map(x=>x[0]).join("")}catch(e){}
+    if(t==null){try{const r=await fetch("https://api.mymemory.translated.net/get?q="+encodeURIComponent(p)+"&langpair=Autodetect|"+lang);const j=await r.json();t=j.responseData.translatedText}catch(e){}}
+    if(t==null)throw new Error("fail");
+    out.push(t);
+  }
+  return out.join(" ").trim();
+}
+async function doTr(){
+  if(!sel)return;
+  const lang=$("lang").value;ls.set("lang",lang);trText=null;
+  const my=sel.text;$("sRes").textContent="Translating…";
+  try{const r=await tr(my,lang);if(!sel||sel.text!==my)return;$("sRes").textContent=r;trText=r}
+  catch(e){$("sRes").textContent="Translation failed. Check your internet and try again."}
+}
+$("bTr").onclick=()=>{if(!sel)return;$("sOrig").textContent=sel.text;$("sheet").style.display="block";$("sel").style.display="none";doTr()};
+$("lang").onchange=doTr;
+$("sClose").onclick=()=>{$("sheet").style.display="none";clr()};
+$("sSave").onclick=()=>{
+  if(!sel)return;
+  if(addHL(trText?{tr:trText,lang:$("lang").value}:{})){toast("Saved to notes")}
+  $("sheet").style.display="none";clr();
+};
+
+function showNotes(){
+  $("nTitle").textContent="Notes · "+cur.name;
+  const L=$("nList");L.innerHTML="";
+  const hs=(cur.hl||[]).slice().sort((a,b)=>a.page-b.page||a.t-b.t);
+  if(!hs.length)L.innerHTML='<div class="empty">No highlights yet.<br>Long-press a word in the book, drag to select,<br>then tap Highlight.</div>';
+  hs.forEach(h=>{
+    const d=document.createElement("div");d.className="note";
+    d.innerHTML='<div class="s"></div><div class="nt"></div><div class="ntr"></div><div class="na"><button class="g">Go to page</button><button class="tb">🌐 Translate</button><button class="db">🗑 Delete</button></div>';
+    d.querySelector(".s").textContent="Page "+h.page;
+    d.querySelector(".nt").textContent=h.text;
+    const T=d.querySelector(".ntr");
+    if(h.tr)T.textContent=h.tr;else T.style.display="none";
+    d.querySelector(".g").onclick=()=>{cur.page=h.page;cur.read=Date.now();save();show("viewer");$("stage").scrollTo(0,0);render()};
+    d.querySelector(".tb").onclick=async e=>{
+      const b=e.target;b.textContent="…";
+      try{const lang=ls.get("lang")||"hi";h.tr=await tr(h.text,lang);h.lang=lang;save();showNotes()}
+      catch(x){b.textContent="🌐 Translate";toast("Translation failed")}
+    };
+    d.querySelector(".db").onclick=()=>{
+      if(!confirm("Delete this highlight?"))return;
+      cur.hl=cur.hl.filter(x=>x.id!==h.id);save();drawHL();updCount();showNotes();
+    };
+    L.appendChild(d);
+  });
+  show("notes");
+}
+$("nBtn").onclick=showNotes;
+$("nBack").onclick=()=>show("viewer");
+$("nCopy").onclick=async()=>{
+  const t=(cur.hl||[]).slice().sort((a,b)=>a.page-b.page||a.t-b.t).map(h=>"Page "+h.page+": "+h.text+(h.tr?"\n→ "+h.tr:"")).join("\n\n");
+  try{await navigator.clipboard.writeText(t);toast("Copied")}catch(e){toast("Could not copy")}
+};
+
+document.addEventListener("visibilitychange",()=>{if(document.hidden)save()});
+window.addEventListener("pagehide",save);
+
+(async()=>{
+  try{db=await openDB();await load();}catch(e){toast("Storage not available");return}
+  renderHome();
+  const id=ls.get("openId");if(id&&files.some(f=>f.id===id))openBook(id);
+})();
+</script>
+</body>
+</html>
