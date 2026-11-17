@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Books">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" href="icon.png">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>My Books</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--text:#1c1c1e;--mute:#6e6e73;--line:#e3e1da;--acc:#2f6fed;--accText:#fff;--bar:#e3e1da;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111113;--card:#1c1c1f;--text:#f2f2f4;--mute:#9a9aa0;--line:#2c2c30;--acc:#5b93ff;--accText:#fff;--bar:#333338;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111113;--card:#1c1c1f;--text:#f2f2f4;--mute:#9a9aa0;--line:#2c2c30;--acc:#5b93ff;--accText:#fff;--bar:#333338;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+.screen{display:none;flex-direction:column;height:100%}
+.screen.on{display:flex}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--card)}
+header h1{font-size:20px;margin:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button{font:inherit;color:var(--text);background:none;border:0;padding:8px 10px;border-radius:10px}
+.pri{background:var(--acc);color:var(--accText);font-weight:600;padding:9px 14px}
+.list{flex:1;overflow:auto;padding:14px 16px 90px}
+.row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:10px}
+.row .main{flex:1;min-width:0}
+.row .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s{font-size:13px;color:var(--mute);margin-top:3px}
+.ico{font-size:26px}
+.x{color:var(--mute);font-size:18px}
+.bar{height:4px;border-radius:2px;background:var(--bar);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc)}
+.cont{background:var(--acc);color:var(--accText);border-radius:16px;padding:16px;margin-bottom:16px}
+.cont small{opacity:.85}
+.cont b{display:block;font-size:18px;margin:4px 0}
+.empty{text-align:center;color:var(--mute);margin-top:60px;line-height:1.6}
+#stage{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;background:var(--bar);text-align:center}
+#cv{display:block;margin:0 auto;background:#fff}
+.tools{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px 12px;background:var(--card);border-top:1px solid var(--line)}
+.tools button{font-size:20px;padding:8px 14px}
+.tools input{width:56px;text-align:center;font:inherit;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text)}
+#msg{position:fixed;left:50%;bottom:calc(30px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#000c;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;display:none}
+</style>
+</head>
+<body>
+
+<div class="screen on" id="home">
+  <header><h1 id="hTitle">📚 My Books</h1><button id="hBack" style="display:none">‹ Back</button><button class="pri" id="hAdd">+ Folder</button></header>
+  <div class="list" id="list"></div>
+</div>
+
+<div class="screen" id="viewer">
+  <header><button id="vBack">‹ Back</button><h1 id="vTitle"></h1><span id="vInfo" style="color:var(--mute);font-size:14px"></span></header>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <div class="tools">
+    <button id="prev">◀</button>
+    <button id="zo">−</button>
+    <input id="pg" type="number" inputmode="numeric" min="1">
+    <button id="zi">+</button>
+    <button id="next">▶</button>
+  </div>
+</div>
+
+<input type="file" id="file" accept="application/pdf,.pdf" multiple hidden>
+<div id="msg"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+let db,folders=[],files=[],curFolder=null,cur=null,pdf=null,zoom=1,task=null,seq=0;
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}}};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+function toast(t){const m=$("msg");m.textContent=t;m.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>m.style.display="none",2200)}
+
+function openDB(){return new Promise((res,rej)=>{const r=indexedDB.open("books",1);
+r.onupgradeneeded=()=>{["folders","files","blobs"].forEach(n=>r.result.createObjectStore(n,{keyPath:"id"}))};
+r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function tx(store,mode,fn){return new Promise((res,rej)=>{const t=db.transaction(store,mode);const q=fn(t.objectStore(store));
+t.oncomplete=()=>res(q&&q.result);t.onerror=()=>rej(t.error);t.onabort=()=>rej(t.error)})}
+const put=(s,o)=>tx(s,"readwrite",st=>st.put(o));
+const del=(s,id)=>tx(s,"readwrite",st=>st.delete(id));
+
+async function load(){folders=await tx("folders","readonly",s=>s.getAll());files=await tx("files","readonly",s=>s.getAll());
+folders.sort((a,b)=>a.t-b.t);}
+
+function renderHome(){
+  const L=$("list");L.innerHTML="";
+  $("hBack").style.display=curFolder?"":"none";
+  $("hTitle").textContent=curFolder?curFolder.name:"📚 My Books";
+  $("hAdd").textContent=curFolder?"+ PDF":"+ Folder";
+  if(!curFolder){
+    const last=files.filter(f=>f.read).sort((a,b)=>b.read-a.read)[0];
+    if(last){const d=document.createElement("div");d.className="cont";
+      d.innerHTML=`<small>Continue reading</small><b></b><small>Page ${last.page}${last.pages?" of "+last.pages:""}</small>`;
+      d.querySelector("b").textContent=last.name;d.onclick=()=>openBook(last.id);L.appendChild(d)}
+    if(!folders.length)L.innerHTML+=`<div class="empty">No folders yet.<br>Tap “+ Folder” to make a category.</div>`;
+    folders.forEach(f=>{
+      const n=files.filter(x=>x.folder===f.id).length;
+      L.appendChild(row("📁",f.name,n+" book"+(n==1?"":"s"),null,()=>{curFolder=f;renderHome()},()=>delFolder(f)));
+    });
+  }else{
+    const fs=files.filter(x=>x.folder===curFolder.id).sort((a,b)=>a.name.localeCompare(b.name));
+    if(!fs.length)L.innerHTML=`<div class="empty">This folder is empty.<br>Tap “+ PDF” to add books.<br>They stay saved on this phone.</div>`;
+    fs.forEach(f=>{
+      const s=f.pages?`Page ${f.page} of ${f.pages}`:"Not opened yet";
+      L.appendChild(row("📕",f.name,s,f.pages?Math.round(f.page/f.pages*100):0,()=>openBook(f.id),()=>delBook(f)));
+    });
+  }
+}
+function row(ico,t,s,prog,open,rm){
+  const d=document.createElement("div");d.className="row";
+  d.innerHTML=`<div class="ico">${ico}</div><div class="main"><div class="t"></div><div class="s"></div>${prog!=null?`<div class="bar"><i style="width:${prog}%"></i></div>`:""}</div><button class="x">✕</button>`;
+  d.querySelector(".t").textContent=t;d.querySelector(".s").textContent=s;
+  d.querySelector(".main").onclick=open;d.querySelector(".ico").onclick=open;
+  d.querySelector(".x").onclick=e=>{e.stopPropagation();rm()};
+  return d;
+}
+async function delFolder(f){
+  if(!confirm("Delete folder “"+f.name+"” and all its books?"))return;
+  for(const x of files.filter(x=>x.folder===f.id)){await del("files",x.id);await del("blobs",x.id)}
+  await del("folders",f.id);await load();renderHome();
+}
+async function delBook(f){
+  if(!confirm("Delete “"+f.name+"”?"))return;
+  await del("files",f.id);await del("blobs",f.id);await load();renderHome();
+}
+
+$("hBack").onclick=()=>{curFolder=null;renderHome()};
+$("hAdd").onclick=async()=>{
+  if(!curFolder){
+    const n=(prompt("Folder name (example: Science)")||"").trim();if(!n)return;
+    await put("folders",{id:uid(),name:n,t:Date.now()});await load();renderHome();
+  }else $("file").click();
+};
+$("file").onchange=async e=>{
+  const fl=[...e.target.files];e.target.value="";
+  for(const f of fl){
+    try{const id=uid();
+      await put("blobs",{id,blob:f});
+      await put("files",{id,folder:curFolder.id,name:f.name.replace(/\.pdf$/i,""),page:1,pages:0,read:0,t:Date.now()});
+    }catch(err){toast("Could not save "+f.name)}
+  }
+  await load();renderHome();toast("Saved on this phone");
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+};
+
+function show(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("on",s.id===id))}
+
+async function openBook(id){
+  const f=files.find(x=>x.id===id);if(!f)return;
+  try{
+    toast("Opening…");
+    const rec=await tx("blobs","readonly",s=>s.get(id));
+    const data=await rec.blob.arrayBuffer();
+    if(pdf){try{pdf.destroy()}catch(e){}}
+    pdf=await pdfjsLib.getDocument({data}).promise;
+    cur=f;f.pages=pdf.numPages;f.page=Math.min(Math.max(1,f.page||1),pdf.numPages);f.read=Date.now();
+    ls.set("openId",id);zoom=1;
+    $("vTitle").textContent=f.name;show("viewer");await save();render();
+  }catch(err){toast("Could not open this PDF");ls.set("openId",null)}
+}
+const save=()=>cur?put("files",cur).catch(()=>{}):0;
+async function render(){
+  if(!pdf)return;
+  const my=++seq;if(task){try{task.cancel()}catch(e){}}
+  $("pg").value=cur.page;$("vInfo").textContent=cur.page+" / "+cur.pages;
+  const p=await pdf.getPage(cur.page);if(my!==seq)return;
+  const st=$("stage"),v1=p.getViewport({scale:1}),dpr=Math.min(window.devicePixelRatio||1,2);
+  const s=st.clientWidth*zoom/v1.width,vp=p.getViewport({scale:s*dpr}),c=$("cv");
+  c.width=vp.width;c.height=vp.height;c.style.width=vp.width/dpr+"px";c.style.height=vp.height/dpr+"px";
+  task=p.render({canvasContext:c.getContext("2d"),viewport:vp});
+  try{await task.promise}catch(e){}
+}
+function go(n){
+  if(!pdf)return;n=Math.max(1,Math.min(pdf.numPages,n|0||cur.page));
+  if(n===cur.page){$("pg").value=n;return}
+  cur.page=n;cur.read=Date.now();save();$("stage").scrollTo(0,0);render();
+}
+$("prev").onclick=()=>go(cur.page-1);
+$("next").onclick=()=>go(cur.page+1);
+$("pg").onchange=e=>go(parseInt(e.target.value));
+$("zi").onclick=()=>{zoom=Math.min(3,zoom+.5);render()};
+$("zo").onclick=()=>{zoom=Math.max(1,zoom-.5);render()};
+$("vBack").onclick=async()=>{await save();ls.set("openId",null);try{pdf&&pdf.destroy()}catch(e){}pdf=null;cur=null;await load();show("home");renderHome()};
+let sx=0,sy=0;
+$("stage").addEventListener("touchstart",e=>{sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+$("stage").addEventListener("touchend",e=>{
+  if(zoom>1||e.changedTouches.length!==1)return;
+  const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;
+  if(Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.5)go(cur.page+(dx<0?1:-1));
+},{passive:true});
+document.addEventListener("visibilitychange",()=>{if(document.hidden)save()});
+window.addEventListener("pagehide",save);
+
+(async()=>{
+  try{db=await openDB();await load();}catch(e){toast("Storage not available");return}
+  renderHome();
+  const id=ls.get("openId");if(id&&files.some(f=>f.id===id))openBook(id);
+})();
+</script>
+</body>
+</html>
